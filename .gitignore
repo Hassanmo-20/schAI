@@ -1,0 +1,63 @@
+# Unified ignores for the SchAI monorepo (frontend/ + backend/).
+# Nothing listed here is required to build or run the project from a fresh clone.
+
+# --- Dependencies & build output ---
+**/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+backend/vendor/
+backend/public/build/
+backend/public/hot
+backend/public/storage
+backend/public/fonts-manifest.dev.json
+
+# --- Environment & secrets (NEVER commit real .env files) ---
+.env
+.env.*
+!.env.example
+!frontend/.env.example
+!backend/.env.example
+backend/auth.json
+
+# --- Logs & caches ---
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.phpunit.result.cache
+.phpunit.cache/
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/pail
+backend/storage/*.key
+backend/bootstrap/cache/*
+frontend/*.tsbuildinfo
+
+# --- OS / IDE ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.sln
+*.sw?
+.phpactor.json
+
+# --- Local AI/agent tooling (installed by `php artisan boost:install`, not project source) ---
+.claude/
+.agents/
+.codex/
+backend/.mcp.json
+backend/boost.json
+backend/AGENTS.md
+backend/CLAUDE.md
+
+# --- Test & coverage artifacts ---
+coverage/
+.nyc_output/

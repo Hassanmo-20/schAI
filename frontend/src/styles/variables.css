@@ -1,0 +1,56 @@
+:root {
+  /* Brand Palette */
+  --navy: #27323f;
+  --navy-dark: #1a222b;
+  --navy-light: #364252;
+  --teal: #2c8ba0;
+  --teal-dark: #257586;
+  --teal-light: #4fa8bd;
+  --teal-subtle: #e6f4f7;
+  
+  /* Layout Surfaces */
+  --page: #eceef0;
+  --sidebar: #222c37;
+  --sidebar-hover: #2e3a48;
+  --card: #ffffff;
+  --panel: #eef1f2;
+  
+  /* Typography & Neutral */
+  --text: #1f2a35;
+  --text-secondary: #4a5764;
+  --muted: #6b7885;
+  --border: #dfe3e7;
+  --border-subtle: #edf1f4;
+  
+  /* Semantic States */
+  --danger-bg: #fdeaea;
+  --danger-border: #f2c4c4;
+  --danger-text: #c0392b;
+  
+  --warning-bg: #fffbeb;
+  --warning-border: #fef3c7;
+  --warning-text: #b45309;
+  
+  --success-bg: #ecfdf5;
+  --success-border: #a7f3d0;
+  --success-text: #047857;
+  
+  --info-bg: #f0f9ff;
+  --info-border: #bae6fd;
+  --info-text: #0369a1;
+
+  /* Typography */
+  --font-family: "Segoe UI", Roboto, Helvetica, Arial, -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  /* Spacing & Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(20, 35, 50, 0.05);
+  --shadow-md: 0 4px 12px rgba(20, 35, 50, 0.08);
+  --shadow-lg: 0 12px 32px rgba(20, 35, 50, 0.12);
+  --shadow-xl: 0 24px 60px rgba(15, 25, 35, 0.22);
+}

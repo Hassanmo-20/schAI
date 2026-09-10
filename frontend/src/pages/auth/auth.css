@@ -1,0 +1,36 @@
+/* Auth pages preserve the original navy/teal split-screen identity. */
+
+.auth-shell {
+  display: grid; grid-template-columns: 1fr 1fr;
+  width: 100%; max-width: 960px; min-height: 520px;
+  border-radius: 10px; overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  margin: 48px auto;
+}
+.auth-brand { background: var(--navy); color: #fff; padding: 56px 48px; display: flex; flex-direction: column; justify-content: center; }
+.auth-logo-text { font-size: 52px; font-weight: 700; letter-spacing: -1px; }
+.auth-logo-text .ai { color: var(--teal-light); }
+.auth-brand h1 { margin: 24px 0 18px; font-size: 27px; font-weight: 500; line-height: 1.3; color: #e7ebee; }
+.auth-brand p { margin: 0; max-width: 22em; font-size: 16px; line-height: 1.6; color: #9aa7b2; }
+.auth-demo { margin-top: 28px; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #8fa0ae; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 12px 14px; }
+.auth-demo strong { color: #d6dee5; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; }
+
+.auth-panel { background: var(--panel); display: flex; align-items: center; justify-content: center; padding: 48px 40px; }
+.auth-card { width: 100%; max-width: 340px; background: #fff; border-radius: 6px; box-shadow: var(--shadow-md); overflow: hidden; }
+.auth-card-header { padding: 22px 0 18px; text-align: center; font-size: 22px; font-weight: 600; border-bottom: 1px solid var(--border); position: relative; }
+.auth-card-header::after { content: ""; position: absolute; left: 0; bottom: -1px; width: 38%; height: 3px; background: var(--teal); }
+.auth-card form { padding: 24px 26px 26px; }
+.auth-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; font-size: 14px; }
+.remember { display: flex; align-items: center; gap: 9px; cursor: pointer; font-weight: 400; }
+.remember input { width: 15px; height: 15px; accent-color: var(--teal); }
+.auth-submit { width: 100%; padding: 13px !important; font-size: 16px !important; }
+.auth-switch { margin: 22px 0 0; text-align: center; font-size: 14px; }
+
+body:has(.auth-shell) { display: flex; align-items: flex-start; justify-content: center; background: #cfd6d6; }
+
+@media (max-width: 780px) {
+  .auth-shell { grid-template-columns: 1fr; margin: 0; border-radius: 0; max-width: none; min-height: 100dvh; }
+  .auth-brand { padding: 40px 28px; text-align: center; align-items: center; }
+  .auth-demo { text-align: left; width: 100%; max-width: 340px; }
+  .auth-panel { padding: 28px 20px 40px; }
+}

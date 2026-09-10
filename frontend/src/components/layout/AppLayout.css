@@ -1,0 +1,77 @@
+/* Layout shell: sidebar + responsive mobile nav. Preserves navy/sidebar identity. */
+
+.sidebar {
+  background: var(--sidebar);
+  color: #c6cfd8;
+  padding: 22px 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.brand { display: flex; flex-direction: column; padding: 0 8px 20px; }
+.brand-text { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+.brand-text .ai { color: var(--teal-light); }
+.brand-sub { font-size: 11px; color: #7d8b99; letter-spacing: 0.4px; margin-top: 2px; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 6px;
+  color: #c6cfd8; font-size: 14px; text-decoration: none;
+  cursor: pointer; transition: background 0.15s, color 0.15s;
+  background: none; border: 0; width: 100%; text-align: left; font-family: inherit;
+}
+.nav-item:hover { background: var(--sidebar-hover); color: #fff; text-decoration: none; }
+.nav-item.active { background: #364252; color: #fff; font-weight: 600; }
+.nav-icon { width: 18px; text-align: center; opacity: 0.85; flex: none; }
+.nav-section { margin: 22px 0 6px; padding: 0 12px; font-size: 12px; letter-spacing: 0.4px; color: #7d8b99; }
+.sidebar .spacer { flex: 1; min-height: 16px; }
+.nav-logout:hover { background: rgba(192, 57, 43, 0.25); color: #fff; }
+.nav-user { padding: 10px 12px; }
+.nav-user-name { color: #fff; font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-user-meta { font-size: 11px; color: #8b98a6; margin-top: 2px; }
+
+.mobile-topbar { display: none; }
+.sidebar-scrim { display: none; }
+
+.route-loading {
+  min-height: 60vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px; color: var(--muted);
+}
+.route-spinner {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 3px solid var(--border); border-top-color: var(--teal);
+  animation: route-spin 0.8s linear infinite;
+}
+@keyframes route-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+  .mobile-topbar {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--sidebar); color: #fff;
+    padding: 10px 14px; position: sticky; top: 0; z-index: 40;
+  }
+  .hamburger { background: none; border: 1px solid #3a4756; color: #fff; border-radius: 6px; padding: 6px 10px; font-size: 16px; cursor: pointer; }
+  .mobile-brand { font-size: 20px; font-weight: 700; }
+  .mobile-brand .ai { color: var(--teal-light); }
+  .mobile-user {
+    margin-left: auto; width: 30px; height: 30px; border-radius: 50%;
+    background: var(--teal); display: flex; align-items: center; justify-content: center; font-weight: 700;
+  }
+  .app-container { display: flex; flex-direction: column; }
+  .sidebar {
+    position: fixed; inset: 0 auto 0 0; width: min(280px, 84vw); z-index: 50;
+    transform: translateX(-105%); transition: transform 0.2s ease;
+    min-height: 100dvh; max-height: 100dvh; border-right: 1px solid #111;
+  }
+  .sidebar-open { transform: translateX(0); }
+  .sidebar-scrim {
+    display: block; position: fixed; inset: 0; z-index: 45;
+    background: rgba(15, 25, 35, 0.5); border: 0; cursor: pointer;
+  }
+}
