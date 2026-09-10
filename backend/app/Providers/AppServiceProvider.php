@@ -32,5 +32,12 @@ class AppServiceProvider extends ServiceProvider
         // (falling back to IP) so one noisy client cannot starve the others.
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)
             ->by($request->user()?->id ?: $request->ip()));
+
+        // Each assistant call hits a paid provider, so it gets a much tighter
+        // per-user budget than the rest of the API.
+        RateLimiter::for('assistant', fn (Request $request) => [
+            Limit::perMinute(10)->by('assistant-min:'.($request->user()?->id ?: $request->ip())),
+            Limit::perDay(200)->by('assistant-day:'.($request->user()?->id ?: $request->ip())),
+        ]);
     }
 }

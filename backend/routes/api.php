@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AssistantController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BatchController;
 use App\Http\Controllers\Api\HealthController;
@@ -48,6 +49,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::delete('/tasks/{task}/complete', [TaskCompletionController::class, 'destroy']);
 
     Route::get('/tasks/{task}/statistics', [TaskStatisticsController::class, 'show']);
+
+    // AI assistant: separate, tighter limiter because each call costs money.
+    Route::post('/assistant/chat', [AssistantController::class, 'chat'])
+        ->middleware('throttle:assistant')
+        ->name('api.assistant.chat');
 
     Route::get(
         '/tasks/{task}/attachments/{attachment}',

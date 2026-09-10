@@ -14,7 +14,8 @@ The repository holds two separate applications that talk over a REST API:
 Deep dives: [Architecture](docs/architecture.md) · [Setup](docs/setup.md) · [API](docs/api.md) ·
 [Frontend](docs/frontend.md) · [Backend](docs/backend.md) · [Database](docs/database.md) ·
 [Authentication](docs/authentication.md) · [Roles & Permissions](docs/roles-permissions.md) ·
-[Testing](docs/testing.md) · [Development](docs/development.md) · [UI flow](docs/ui-flow.md)
+[Assistant](docs/assistant.md) · [Testing](docs/testing.md) · [Development](docs/development.md) ·
+[UI flow](docs/ui-flow.md)
 
 ## Features
 
@@ -28,6 +29,12 @@ completion statistics (`38 / 50 · 76%`).
 
 **Both** — token authentication, role-based routing, loading/error/empty states throughout, and a
 responsive layout from 320 px to desktop with a mobile navigation drawer.
+
+**AI Academic Assistant** — an OpenAI-powered chat on the dashboard that answers questions about
+*your own* tasks and deadlines ("what should I work on today?", "make me a study plan"). The API key
+lives only in `backend/.env`; the browser talks solely to `POST /api/assistant/chat`, which builds
+the academic context server-side from the authenticated user. Optional — SchAI runs fully without
+it. See [docs/assistant.md](docs/assistant.md).
 
 ## Architecture
 
@@ -54,7 +61,7 @@ Frontend guards are UX only — **the backend is the security boundary**.
 │   ├── app/           Enums · Http (Controllers/Requests/Resources) · Models · Policies
 │   ├── database/      migrations · factories · seeders
 │   ├── routes/api.php 16 endpoints
-│   └── tests/Feature/ 43 feature tests
+│   └── tests/Feature/ 66 feature tests
 └── docs/              architecture · setup · api · frontend · backend · database
                        authentication · roles-permissions · testing · development · ui-flow
                        + schai-postman-collection.json
@@ -128,7 +135,9 @@ The frontend also runs in mock mode (`VITE_USE_MOCK_DATA=true`) without any back
 - Frontend (`frontend/.env`, from [`frontend/.env.example`](frontend/.env.example)):
   `VITE_API_BASE_URL` (default `http://localhost:8000/api`), `VITE_USE_MOCK_DATA` (`true` = local mock, `false` = real API).
 - Backend (`backend/.env`, from [`backend/.env.example`](backend/.env.example)):
-  `APP_KEY`, `APP_URL`, `FRONTEND_URL` (comma-separated CORS origins), `DB_*`, `FILESYSTEM_DISK`.
+  `APP_KEY`, `APP_URL`, `FRONTEND_URL` (comma-separated CORS origins), `DB_*`, `FILESYSTEM_DISK`,
+  and optionally `OPENAI_API_KEY` + `OPENAI_MODEL` for the AI assistant
+  ([details](docs/assistant.md)).
 - Never commit `.env` files. They are gitignored at the root.
 
 ## Where to start changing code
@@ -151,6 +160,7 @@ The frontend also runs in mock mode (`VITE_USE_MOCK_DATA=true`) without any back
 | Completion | `POST /tasks/{task}/complete` · `DELETE /tasks/{task}/complete` |
 | Statistics | `GET /tasks/{task}/statistics` |
 | Attachments | `GET`/`DELETE /tasks/{task}/attachments/{attachment}` |
+| Assistant | `POST /assistant/chat` (10/min, 200/day per user) |
 | Health | `GET /health` |
 
 Conventions: single resources return `{ "data": … }`, collections add `meta` pagination;

@@ -45,7 +45,7 @@ realistic completions (38/50, 20/50, 45/50, 5/50, 48/50, 1/50). Demo passwords: 
 
 ```bash
 php artisan serve              # http://localhost:8000
-php artisan route:list --path=api   # sanity check: 16 routes
+php artisan route:list --path=api   # sanity check: 17 routes
 ```
 
 ## 3. Frontend
@@ -68,7 +68,7 @@ Open the printed URL and sign in (`student@schai.test` / `password`).
 
 ## 4. Verify the whole loop
 
-1. Backend: `php artisan test` → 43 passed.
+1. Backend: `php artisan test` → 66 passed.
 2. Frontend: `npm run build` → clean build.
 3. Browser: log in as student (dashboard + complete a task), then as representative
    (create a task, open its statistics). No console errors.

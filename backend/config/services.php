@@ -35,4 +35,23 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | OpenAI — Academic Assistant
+    |--------------------------------------------------------------------------
+    |
+    | Powers POST /api/assistant/chat. The key lives only here (server side)
+    | and is never sent to the browser. When `key` is empty the assistant
+    | reports itself unavailable and the rest of SchAI keeps working.
+    |
+    */
+
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+        'timeout' => (int) env('OPENAI_TIMEOUT', 30),
+        'max_output_tokens' => (int) env('OPENAI_MAX_OUTPUT_TOKENS', 700),
+    ],
+
 ];

@@ -1,58 +1,166 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { assistantService, AssistantTurn, ASSISTANT_LIMITS } from '../../services/assistantService';
+import Markdown from '../common/Markdown';
 import './tasks.css';
 
 interface ChatMsg {
-  role: 'user' | 'bot';
+  role: 'user' | 'assistant';
   text: string;
 }
 
+const SUGGESTIONS = [
+  'What should I work on today?',
+  'Which task is most urgent?',
+  'Make me a study plan for this week.',
+  'Show me my upcoming deadlines.',
+];
+
 /**
- * Frontend placeholder for a future academic AI assistant.
- * No backend calls — clearly labelled as "coming soon".
+ * Academic Assistant.
+ *
+ * Talks only to our own authenticated endpoint (`POST /api/assistant/chat`),
+ * which builds the academic context server-side. No provider key is ever
+ * present in the browser.
  */
 const AcademicAssistant: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMsg[]>([
-    { role: 'bot', text: 'Hi! I will soon help you plan study sessions around your deadlines. (Frontend placeholder — no AI backend connected yet.)' },
-  ]);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [rateLimited, setRateLimited] = useState(false);
 
-  const send = (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = draft.trim();
-    if (!text) return;
-    setMessages((m) => [
-      ...m,
-      { role: 'user', text },
-      {
-        role: 'bot',
-        text: 'Thanks — the academic assistant is not connected yet. Your deadlines on the left come from your real task list.',
-      },
-    ]);
+  const threadRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    // Keep the newest turn in view as the conversation grows.
+    threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' });
+  }, [messages, sending]);
+
+  const ask = async (question: string) => {
+    const text = question.trim();
+    if (!text || sending) return;
+
+    setError(null);
+    setRateLimited(false);
     setDraft('');
+
+    // History sent to the API excludes the message we are about to ask.
+    const history: AssistantTurn[] = messages
+      .slice(-ASSISTANT_LIMITS.maxHistoryMessages)
+      .map((m) => ({ role: m.role, content: m.text }));
+
+    setMessages((prev) => [...prev, { role: 'user', text }]);
+    setSending(true);
+
+    try {
+      const reply = await assistantService.sendMessage(text, history);
+      setMessages((prev) => [...prev, { role: 'assistant', text: reply }]);
+    } catch (err: any) {
+      setError(err?.message ?? 'Something went wrong. Please try again.');
+      setRateLimited(Boolean(err?.rateLimited));
+    } finally {
+      setSending(false);
+      inputRef.current?.focus();
+    }
   };
 
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void ask(draft);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enter sends, Shift+Enter inserts a newline.
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      void ask(draft);
+    }
+  };
+
+  const isEmpty = messages.length === 0;
+
   return (
-    <section className="card assistant" aria-label="Academic assistant (placeholder)">
+    <section className="card assistant" aria-labelledby="assistant-heading">
       <div className="assistant-head">
-        <h2>Academic Assistant <span className="soon-badge">soon</span></h2>
+        <h2 id="assistant-heading">Academic Assistant</h2>
+        <p className="assistant-sub">
+          Ask about your tasks, deadlines and study planning.
+        </p>
       </div>
-      <div className="thread" aria-live="polite">
+
+      <div className="thread" ref={threadRef} role="log" aria-live="polite" aria-busy={sending}>
+        {isEmpty && !sending && (
+          <div className="assistant-empty">
+            <p className="assistant-empty-title">Ask me about your tasks, deadlines, or study plan.</p>
+            <p className="assistant-empty-hint">
+              I can only see your own SchAI tasks — I&apos;ll tell you if something isn&apos;t there.
+            </p>
+            <div className="assistant-suggestions">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className="suggestion-chip"
+                  onClick={() => void ask(s)}
+                  disabled={sending}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {messages.map((m, i) => (
-          <div key={i} className={`msg ${m.role}`}>
-            {m.role === 'bot' && <div className="avatar" aria-hidden="true">AI</div>}
-            <div className="bubble">{m.text}</div>
+          <div key={i} className={`msg ${m.role === 'user' ? 'user' : 'bot'}`}>
+            {m.role === 'assistant' && <div className="avatar" aria-hidden="true">AI</div>}
+            <div className="bubble">
+              {m.role === 'assistant' ? <Markdown text={m.text} /> : m.text}
+            </div>
           </div>
         ))}
+
+        {sending && (
+          <div className="msg bot">
+            <div className="avatar" aria-hidden="true">AI</div>
+            <div className="bubble bubble-thinking">
+              <span className="dot" /><span className="dot" /><span className="dot" />
+              <span className="sr-only">The assistant is thinking…</span>
+            </div>
+          </div>
+        )}
       </div>
-      <form className="composer" onSubmit={send}>
-        <input
-          type="text"
-          placeholder="Ask about your study plan…"
-          aria-label="Message the academic assistant"
+
+      {error && (
+        <p className={`assistant-error${rateLimited ? ' assistant-error-limit' : ''}`} role="alert">
+          {error}
+        </p>
+      )}
+
+      <form className="composer composer-multiline" onSubmit={onSubmit}>
+        <label className="sr-only" htmlFor="assistant-input">
+          Ask the academic assistant a question
+        </label>
+        <textarea
+          id="assistant-input"
+          ref={inputRef}
+          rows={1}
+          placeholder="Ask about your tasks, deadlines or study plan…"
           value={draft}
+          maxLength={ASSISTANT_LIMITS.maxMessageChars}
           onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={onKeyDown}
+          disabled={sending}
         />
-        <button className="btn btn-primary btn-sm" type="submit">Send</button>
+        <button
+          className="btn btn-primary btn-sm"
+          type="submit"
+          disabled={sending || draft.trim().length === 0}
+          aria-label="Send message to the academic assistant"
+        >
+          {sending ? 'Sending…' : 'Send'}
+        </button>
       </form>
     </section>
   );

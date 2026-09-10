@@ -30,7 +30,7 @@ Run:
 
 ```bash
 php artisan serve              # http://localhost:8000, API at /api/*
-php artisan test               # 43 feature tests, sqlite :memory:
+php artisan test               # 66 feature tests, sqlite :memory:
 php artisan route:list --path=api
 ```
 

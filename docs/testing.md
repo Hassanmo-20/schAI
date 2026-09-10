@@ -1,6 +1,6 @@
 # Testing Guide
 
-## Backend — PHPUnit, 43 tests, all passing
+## Backend — PHPUnit, 66 tests, all passing
 
 ```bash
 cd backend
