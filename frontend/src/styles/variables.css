@@ -8,10 +8,11 @@
   --teal-light: #4fa8bd;
   --teal-subtle: #e6f4f7;
   
-  /* Layout Surfaces */
-  --page: #eceef0;
-  --sidebar: #222c37;
-  --sidebar-hover: #2e3a48;
+  /* Layout Surfaces (unified with the auth "Academic AI Network" theme:
+     deep indigo sidebar + indigo-tinted light page) */
+  --page: #e9edf4;
+  --sidebar: #0d1730;
+  --sidebar-hover: rgba(255, 255, 255, 0.08);
   --card: #ffffff;
   --panel: #eef1f2;
   
