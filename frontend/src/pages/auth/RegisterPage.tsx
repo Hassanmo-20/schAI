@@ -4,12 +4,14 @@ import { useAuth } from '../../context/AuthContext';
 import { Field, Input, Select } from '../../components/common/FormControls';
 import { Button } from '../../components/common/Button';
 import { batchService } from '../../services/batchService';
-import { Batch } from '../../types';
+import { RegistrationOptions, UserRole } from '../../types';
 import './auth.css';
 
 function isValidEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
+
+const EMPTY_OPTIONS: RegistrationOptions = { batchYears: [], departments: [], roles: [] };
 
 const RegisterPage: React.FC = () => {
   const { register, isAuthenticated } = useAuth();
@@ -18,11 +20,14 @@ const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  // Batch is submitted by id: the API validates `batch_id` against the
-  // batches table, so a hardcoded list of names could never register.
-  const [batches, setBatches] = useState<Batch[]>([]);
-  const [batchId, setBatchId] = useState('');
-  const [batchError, setBatchError] = useState<string | null>(null);
+  // A group is the (batch year, department) PAIR, submitted as its two halves.
+  // The API resolves them to the real group row, so the browser never sends —
+  // and can never invent — a batch id.
+  const [options, setOptions] = useState<RegistrationOptions>(EMPTY_OPTIONS);
+  const [batchYear, setBatchYear] = useState('');
+  const [department, setDepartment] = useState('');
+  const [role, setRole] = useState<UserRole>('student');
+  const [optionsError, setOptionsError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -30,14 +35,17 @@ const RegisterPage: React.FC = () => {
   useEffect(() => {
     let active = true;
     batchService
-      .getBatches()
-      .then((list) => {
+      .getRegistrationOptions()
+      .then((opts) => {
         if (!active) return;
-        setBatches(list);
-        setBatchId((current) => current || (list[0]?.id ?? ''));
-        setBatchError(null);
+        setOptions(opts);
+        setBatchYear((current) => current || (opts.batchYears[0]?.value ?? ''));
+        setDepartment((current) => current || (opts.departments[0]?.value ?? ''));
+        setOptionsError(null);
       })
-      .catch(() => active && setBatchError('Could not load batches. Please refresh and try again.'));
+      .catch(() =>
+        active && setOptionsError('Could not load the sign-up options. Please refresh and try again.')
+      );
     return () => {
       active = false;
     };
@@ -47,6 +55,8 @@ const RegisterPage: React.FC = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const loading = options.batchYears.length === 0 && !optionsError;
+
   const validate = (): boolean => {
     const e: Record<string, string> = {};
     if (!name.trim()) e.name = 'Full name is required.';
@@ -55,7 +65,9 @@ const RegisterPage: React.FC = () => {
     if (!password) e.password = 'Password is required.';
     else if (password.length < 8) e.password = 'Password must be at least 8 characters.';
     if (confirm !== password) e.confirm = 'Passwords do not match.';
-    if (!batchId) e.batch = 'Batch is required.';
+    if (!batchYear) e.batchYear = 'Please choose your batch.';
+    if (!department) e.department = 'Please choose your department.';
+    if (!role) e.role = 'Please choose your role.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -66,9 +78,15 @@ const RegisterPage: React.FC = () => {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      // Public registration always creates a Student; reps are provisioned separately.
-      await register({ name: name.trim(), email: email.trim(), password, batch: batchId });
-      navigate('/dashboard', { replace: true });
+      await register({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        batchYear,
+        department,
+        role,
+      });
+      navigate(role === 'representative' ? '/representative' : '/dashboard', { replace: true });
     } catch (err: any) {
       setServerError(err?.message ?? 'Registration failed. Please try again.');
     } finally {
@@ -82,7 +100,7 @@ const RegisterPage: React.FC = () => {
         <div className="auth-logo">
           <span className="auth-logo-text">Sch<span className="ai">AI</span></span>
         </div>
-        <h1>Create your student account</h1>
+        <h1>Create your account</h1>
         <p>Track assignments, quizzes, midterms and projects for your batch — all in one hub.</p>
       </section>
 
@@ -109,20 +127,67 @@ const RegisterPage: React.FC = () => {
               <Input id="reg-confirm" type="password" placeholder="********" autoComplete="new-password"
                 value={confirm} onChange={(e) => setConfirm(e.target.value)} error={errors.confirm} />
             </Field>
-            <Field label="Batch" htmlFor="reg-batch" error={errors.batch ?? batchError ?? undefined}>
+
+            <div className="auth-field-row">
+              <Field label="Batch" htmlFor="reg-batch-year" error={errors.batchYear}>
+                <Select
+                  id="reg-batch-year"
+                  value={batchYear}
+                  onChange={(e) => setBatchYear(e.target.value)}
+                  error={errors.batchYear}
+                  disabled={loading}
+                >
+                  {loading && <option value="">Loading…</option>}
+                  {options.batchYears.map((b) => (
+                    <option key={b.value} value={b.value}>{b.label}</option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Department" htmlFor="reg-department" error={errors.department}>
+                <Select
+                  id="reg-department"
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  error={errors.department}
+                  disabled={loading}
+                >
+                  {loading && <option value="">Loading…</option>}
+                  {options.departments.map((d) => (
+                    <option key={d.value} value={d.value} title={d.label}>{d.value}</option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+
+            <Field
+              label="I am a"
+              htmlFor="reg-role"
+              error={errors.role ?? optionsError ?? undefined}
+              hint="Representatives can post and manage tasks for their own group."
+            >
               <Select
-                id="reg-batch"
-                value={batchId}
-                onChange={(e) => setBatchId(e.target.value)}
-                error={errors.batch}
-                disabled={batches.length === 0}
+                id="reg-role"
+                value={role}
+                onChange={(e) => setRole(e.target.value as UserRole)}
+                error={errors.role}
               >
-                {batches.length === 0 && <option value="">Loading batches…</option>}
-                {batches.map((b) => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
+                {(options.roles.length > 0
+                  ? options.roles
+                  : [
+                      { value: 'student', label: 'Student' },
+                      { value: 'representative', label: 'Batch Representative' },
+                    ]
+                ).map((r) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </Select>
             </Field>
+
+            <p className="auth-group-preview">
+              You are joining <strong>{batchYear || '—'} {department}</strong>. Only this group&apos;s
+              tasks will be visible to you.
+            </p>
+
             <Button type="submit" loading={submitting} className="auth-submit">
               Create Account
             </Button>

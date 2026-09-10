@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\BatchYear;
+use App\Enums\Department;
 use App\Enums\Role;
 use App\Models\Batch;
 use App\Models\User;
@@ -14,25 +16,48 @@ class AuthTest extends TestCase
 
     public function test_student_can_register_and_receives_token(): void
     {
-        $batch = Batch::factory()->create();
-
         $response = $this->postJson('/api/auth/register', [
             'name' => 'New Student',
             'email' => 'new.student@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'batch_id' => $batch->id,
+            'batch_year' => '2027',
+            'department' => 'CCE',
+            'role' => 'student',
         ]);
+
+        $group = Batch::where('batch_year', '2027')->where('department', 'CCE')->firstOrFail();
 
         $response->assertCreated()
             ->assertJsonPath('user.email', 'new.student@example.com')
             ->assertJsonPath('user.role', 'student')
-            ->assertJsonPath('user.batch_id', $batch->id)
+            ->assertJsonPath('user.batch_id', $group->id)
+            ->assertJsonPath('user.batch_year', '2027')
+            ->assertJsonPath('user.department', 'CCE')
+            ->assertJsonPath('user.batch', '2027 CCE')
             ->assertJsonStructure(['message', 'token', 'user']);
 
         $this->assertDatabaseHas('users', ['email' => 'new.student@example.com', 'role' => 'student']);
         // Password must be stored hashed, never plain.
         $this->assertNotEquals('password123', User::whereEmail('new.student@example.com')->first()->password);
+    }
+
+    public function test_registration_reuses_the_existing_group_row(): void
+    {
+        $group = Batch::factory()->group(BatchYear::Y2029, Department::CSE)->create();
+
+        $this->postJson('/api/auth/register', [
+            'name' => 'Joiner',
+            'email' => 'joiner@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'batch_year' => '2029',
+            'department' => 'CSE',
+            'role' => 'student',
+        ])->assertCreated()->assertJsonPath('user.batch_id', $group->id);
+
+        // Two people picking the same pair must land in ONE group, not two.
+        $this->assertSame(1, Batch::where('batch_year', '2029')->where('department', 'CSE')->count());
     }
 
     public function test_registration_rejects_duplicate_email(): void
@@ -44,33 +69,56 @@ class AuthTest extends TestCase
             'email' => $user->email,
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'batch_id' => $user->batch_id,
+            'batch_year' => '2027',
+            'department' => 'CCE',
+            'role' => 'student',
         ])->assertUnprocessable()
             ->assertJsonValidationErrors('email');
     }
 
-    public function test_registration_cannot_escalate_to_representative(): void
+    public function test_registration_honours_the_selected_representative_role(): void
     {
-        $batch = Batch::factory()->create();
-
+        // Product decision: the role is self-selected at sign-up (see
+        // RegisterRequest). A representative's powers are still confined to
+        // their own group by TaskPolicy, so this never grants cross-group access.
         $response = $this->postJson('/api/auth/register', [
-            'name' => 'Sneaky',
-            'email' => 'sneaky@example.com',
+            'name' => 'Group Rep',
+            'email' => 'rep@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'batch_id' => $batch->id,
+            'batch_year' => '2028++',
+            'department' => 'CSE',
             'role' => 'representative',
         ]);
 
-        $response->assertCreated()->assertJsonPath('user.role', 'student');
-        $this->assertSame(Role::Student, User::whereEmail('sneaky@example.com')->first()->role);
+        $response->assertCreated()
+            ->assertJsonPath('user.role', 'representative')
+            ->assertJsonPath('user.batch', '2028++ CSE');
+
+        $this->assertSame(Role::Representative, User::whereEmail('rep@example.com')->first()->role);
+    }
+
+    public function test_registration_rejects_values_outside_the_offered_choices(): void
+    {
+        $this->postJson('/api/auth/register', [
+            'name' => 'Outsider',
+            'email' => 'outsider@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'batch_year' => '1999',
+            'department' => 'LAW',
+            'role' => 'admin',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['batch_year', 'department', 'role']);
+
+        $this->assertDatabaseMissing('users', ['email' => 'outsider@example.com']);
     }
 
     public function test_registration_validates_required_fields(): void
     {
         $this->postJson('/api/auth/register', [])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name', 'email', 'password', 'batch_id']);
+            ->assertJsonValidationErrors(['name', 'email', 'password', 'batch_year', 'department', 'role']);
     }
 
     public function test_user_can_login_and_fetch_profile(): void

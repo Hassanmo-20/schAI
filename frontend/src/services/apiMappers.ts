@@ -1,4 +1,12 @@
-import { AcademicTask, Attachment, TaskStatisticsData, TaskType, User } from '../types';
+import {
+  AcademicTask,
+  AppNotification,
+  Attachment,
+  NotificationType,
+  TaskStatisticsData,
+  TaskType,
+  User,
+} from '../types';
 
 /**
  * Translation layer between the Laravel API and the frontend domain model.
@@ -57,6 +65,21 @@ interface ApiUser {
   role: string;
   batch_id: number | null;
   batch: string | null;
+  batch_year?: string | null;
+  department?: string | null;
+}
+
+interface ApiNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  task_id?: number | string | null;
+  task_title?: string | null;
+  deadline?: string | null;
+  is_read: boolean;
+  read_at?: string | null;
+  created_at?: string | null;
 }
 
 const TASK_TYPES: TaskType[] = ['Assignment', 'Quiz', 'Midterm', 'Exam', 'Project', 'Other'];
@@ -123,7 +146,34 @@ export function mapUser(u: ApiUser): User {
     name: u.name,
     email: u.email,
     role: u.role === 'representative' ? 'representative' : 'student',
+    // The API already sends the group label ("2027 CCE"); the raw id is only
+    // a last-resort fallback so the UI never renders an empty group.
     batch: u.batch ?? (u.batch_id != null ? String(u.batch_id) : ''),
+    batchYear: u.batch_year ?? undefined,
+    department: u.department ?? undefined,
+  };
+}
+
+const NOTIFICATION_TYPES: NotificationType[] = [
+  'task_published',
+  'task_updated',
+  'deadline_approaching',
+];
+
+export function mapNotification(n: ApiNotification): AppNotification {
+  const type = NOTIFICATION_TYPES.find((t) => t === n.type) ?? 'notification';
+
+  return {
+    id: String(n.id),
+    type,
+    title: n.title,
+    message: n.message,
+    taskId: n.task_id != null ? String(n.task_id) : undefined,
+    taskTitle: n.task_title ?? undefined,
+    deadline: n.deadline ?? undefined,
+    isRead: Boolean(n.is_read),
+    readAt: n.read_at ?? undefined,
+    createdAt: n.created_at ?? undefined,
   };
 }
 

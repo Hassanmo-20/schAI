@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
@@ -16,13 +15,15 @@ class AuthController extends Controller
 {
     public function register(RegisterRequest $request): JsonResponse
     {
-        // Role is forced server-side: public registration always yields a student.
+        // The group is resolved from the submitted (batch year, department)
+        // pair — never from a client-supplied id. See RegisterRequest for why
+        // the role is self-selected.
         $user = User::create([
             'name' => $request->validated('name'),
             'email' => $request->validated('email'),
             'password' => $request->validated('password'),
-            'role' => Role::Student,
-            'batch_id' => $request->validated('batch_id'),
+            'role' => $request->role(),
+            'batch_id' => $request->group()->id,
         ]);
 
         $user->load('batch');

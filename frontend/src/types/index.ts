@@ -1,9 +1,30 @@
 export type UserRole = 'student' | 'representative';
 
+/**
+ * A group is the (batch year, department) PAIR — "2027 CCE" and "2027 CSE"
+ * are different groups. The valid values live in the backend enums and reach
+ * the UI through `GET /registration-options`, so they are typed as strings
+ * here rather than hardcoded: adding a batch year is a backend-only change.
+ */
 export interface Batch {
   id: string;
+  /** Display label for the pair, e.g. "2027 CCE". */
   name: string;
+  batchYear?: string;
   department?: string;
+}
+
+/** One selectable value plus the text to show for it. */
+export interface Choice {
+  value: string;
+  label: string;
+}
+
+/** The choices the registration form must offer, served by the backend. */
+export interface RegistrationOptions {
+  batchYears: Choice[];
+  departments: Choice[];
+  roles: Choice[];
 }
 
 export interface User {
@@ -11,8 +32,30 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  /** Ready-made group label, e.g. "2027 CCE". */
   batch: string;
+  batchYear?: string;
+  department?: string;
   avatarUrl?: string;
+}
+
+export type NotificationType =
+  | 'task_published'
+  | 'task_updated'
+  | 'deadline_approaching'
+  | 'notification';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  taskId?: string;
+  taskTitle?: string;
+  deadline?: string;
+  isRead: boolean;
+  readAt?: string;
+  createdAt?: string;
 }
 
 export type TaskType = 'Assignment' | 'Quiz' | 'Midterm' | 'Exam' | 'Project' | 'Other';

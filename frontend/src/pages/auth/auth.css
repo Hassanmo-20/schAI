@@ -26,6 +26,12 @@
 .auth-submit { width: 100%; padding: 13px !important; font-size: 16px !important; }
 .auth-switch { margin: 22px 0 0; text-align: center; font-size: 14px; }
 
+/* Batch year + department sit side by side: together they are ONE choice
+   (the group), so splitting them across two full rows reads as unrelated. */
+.auth-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.auth-group-preview { margin: 4px 0 18px; font-size: 13px; line-height: 1.5; color: var(--text-muted, #64748b); }
+.auth-group-preview strong { color: var(--navy); }
+
 body:has(.auth-shell) { display: flex; align-items: flex-start; justify-content: center; background: #cfd6d6; }
 
 @media (max-width: 780px) {
@@ -33,4 +39,8 @@ body:has(.auth-shell) { display: flex; align-items: flex-start; justify-content:
   .auth-brand { padding: 40px 28px; text-align: center; align-items: center; }
   .auth-demo { text-align: left; width: 100%; max-width: 340px; }
   .auth-panel { padding: 28px 20px 40px; }
+}
+
+@media (max-width: 380px) {
+  .auth-field-row { grid-template-columns: 1fr; gap: 0; }
 }

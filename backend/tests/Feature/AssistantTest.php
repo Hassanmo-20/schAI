@@ -84,7 +84,9 @@ class AssistantTest extends TestCase
         [$student] = $this->studentWithTask();
         Sanctum::actingAs($student);
 
-        $this->postJson('/api/assistant/chat', ['message' => 'What should I work on today?'])
+        // A message with no add/complete/deadline-query keywords so it is
+        // classified General and routed through the OpenAI-backed path.
+        $this->postJson('/api/assistant/chat', ['message' => 'Can you give me general advice about managing my coursework?'])
             ->assertOk()
             ->assertJsonPath('data.message', 'You should start with Database Assignment 2.')
             ->assertJsonStructure(['data' => ['message']]);
@@ -320,23 +322,26 @@ class AssistantTest extends TestCase
         $this->assertSame('how long should I spend on it?', end($messages)['content']);
     }
 
-    // ------------------------------------------------------ provider errors
+    // ---------------------------------------------- provider unavailable (fallback)
+    //
+    // Per the "OpenAI is optional" product rule, a missing/failing provider
+    // must NEVER surface as an HTTP error to the user — the assistant falls
+    // back to the local knowledge base and still replies with 200 + real text.
 
-    public function test_missing_api_key_returns_service_unavailable(): void
+    public function test_missing_api_key_falls_back_gracefully(): void
     {
         Http::fake();
         config()->set('services.openai.key', null);
         [$student] = $this->studentWithTask();
         Sanctum::actingAs($student);
 
-        $this->postJson('/api/assistant/chat', ['message' => 'hi'])
-            ->assertStatus(503)
-            ->assertJsonPath('message', 'The academic assistant is not configured on this server yet.');
+        $response = $this->postJson('/api/assistant/chat', ['message' => 'hi'])->assertOk();
 
+        $this->assertNotEmpty($response->json('data.message'));
         Http::assertNothingSent();
     }
 
-    public function test_provider_server_error_is_not_leaked(): void
+    public function test_provider_server_error_falls_back_without_leaking_details(): void
     {
         Http::fake([
             '*/chat/completions' => Http::response([
@@ -346,43 +351,45 @@ class AssistantTest extends TestCase
         [$student] = $this->studentWithTask();
         Sanctum::actingAs($student);
 
-        $response = $this->postJson('/api/assistant/chat', ['message' => 'hi'])->assertStatus(503);
+        $response = $this->postJson('/api/assistant/chat', ['message' => 'hi'])->assertOk();
 
         $body = $response->getContent();
         $this->assertStringNotContainsString('sk-secret-123', $body);
         $this->assertStringNotContainsString('Incorrect API key', $body);
+        $this->assertNotEmpty($response->json('data.message'));
     }
 
-    public function test_provider_client_error_is_handled(): void
+    public function test_provider_client_error_falls_back(): void
     {
         Http::fake(['*/chat/completions' => Http::response(['error' => 'bad request'], 400)]);
         [$student] = $this->studentWithTask();
         Sanctum::actingAs($student);
 
-        $this->postJson('/api/assistant/chat', ['message' => 'hi'])->assertStatus(503);
+        $response = $this->postJson('/api/assistant/chat', ['message' => 'hi'])->assertOk();
+        $this->assertNotEmpty($response->json('data.message'));
     }
 
-    public function test_provider_timeout_is_handled(): void
+    public function test_provider_timeout_falls_back(): void
     {
         Http::fake(fn () => throw new ConnectionException('cURL error 28: timeout'));
         [$student] = $this->studentWithTask();
         Sanctum::actingAs($student);
 
-        $this->postJson('/api/assistant/chat', ['message' => 'hi'])
-            ->assertStatus(503)
-            ->assertJsonPath('message', 'The academic assistant is temporarily unavailable. Please try again in a moment.');
+        $response = $this->postJson('/api/assistant/chat', ['message' => 'hi'])->assertOk();
+        $this->assertNotEmpty($response->json('data.message'));
     }
 
-    public function test_malformed_provider_response_is_handled(): void
+    public function test_malformed_provider_response_falls_back(): void
     {
         Http::fake(['*/chat/completions' => Http::response(['unexpected' => 'shape'], 200)]);
         [$student] = $this->studentWithTask();
         Sanctum::actingAs($student);
 
-        $this->postJson('/api/assistant/chat', ['message' => 'hi'])->assertStatus(502);
+        $response = $this->postJson('/api/assistant/chat', ['message' => 'hi'])->assertOk();
+        $this->assertNotEmpty($response->json('data.message'));
     }
 
-    public function test_empty_provider_content_is_handled(): void
+    public function test_empty_provider_content_falls_back(): void
     {
         Http::fake([
             '*/chat/completions' => Http::response([
@@ -392,7 +399,8 @@ class AssistantTest extends TestCase
         [$student] = $this->studentWithTask();
         Sanctum::actingAs($student);
 
-        $this->postJson('/api/assistant/chat', ['message' => 'hi'])->assertStatus(502);
+        $response = $this->postJson('/api/assistant/chat', ['message' => 'hi'])->assertOk();
+        $this->assertNotEmpty($response->json('data.message'));
     }
 
     public function test_api_key_never_appears_in_a_successful_response(): void

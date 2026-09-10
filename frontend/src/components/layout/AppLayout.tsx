@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import NotificationBell from './NotificationBell';
 import './AppLayout.css';
 
 const StudentLinks = [
@@ -44,9 +45,12 @@ const AppLayout: React.FC = () => {
         <span className="mobile-brand">
           Sch<span className="ai">AI</span>
         </span>
-        <span className="mobile-user" aria-hidden="true">
-          {user?.name?.charAt(0) ?? 'S'}
-        </span>
+        <div className="mobile-actions">
+          <NotificationBell />
+          <span className="mobile-user" aria-hidden="true">
+            {user?.name?.charAt(0) ?? 'S'}
+          </span>
+        </div>
       </header>
 
       <aside className={`sidebar${mobileOpen ? ' sidebar-open' : ''}`} aria-label="Primary navigation">

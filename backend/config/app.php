@@ -59,13 +59,17 @@ return [
     | Application Timezone
     |--------------------------------------------------------------------------
     |
-    | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
+    | The timezone every date in SchAI is interpreted and stored in. Task
+    | deadlines are calendar deadlines for students in Egypt, so this defaults
+    | to Africa/Cairo rather than UTC: a task the assistant creates "for
+    | Friday" must be Friday for the student, not Friday in UTC.
+    |
+    | Nothing in the app may fall back to the server machine's timezone —
+    | date logic reads this value (via `config('app.timezone')`) instead.
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'Africa/Cairo'),
 
     /*
     |--------------------------------------------------------------------------

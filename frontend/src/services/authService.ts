@@ -1,6 +1,6 @@
 import { apiClient, USE_MOCK_DATA } from './apiClient';
 import { AuthResponse, User, UserRole } from '../types';
-import { MOCK_BATCHES, MOCK_USERS } from '../data/mockData';
+import { MOCK_USERS } from '../data/mockData';
 import { mapUser } from './apiMappers';
 
 const TOKEN_KEY = 'schai_auth_token';
@@ -16,8 +16,14 @@ export interface RegisterDto {
   name: string;
   email: string;
   password?: string;
-  batch: string;
-  role?: UserRole;
+  /**
+   * The group is submitted as its two halves, never as a batch id: the API
+   * resolves (batch year + department) to the real group row itself, so the
+   * browser can never point a new account at an arbitrary batch.
+   */
+  batchYear: string;
+  department: string;
+  role: UserRole;
 }
 
 export const authService = {
@@ -39,7 +45,9 @@ export const authService = {
           name: email.split('@')[0].replace('.', ' '),
           email: email,
           role: 'student',
-          batch: 'Batch CS-2026-A',
+          batch: '2027 CCE',
+          batchYear: '2027',
+          department: 'CCE',
         };
       }
 
@@ -68,16 +76,15 @@ export const authService = {
         id: `usr_${Date.now()}`,
         name: data.name,
         email: data.email,
-        role: data.role || 'student', // Always default to student for public signups
-        // `batch` carries a batch id; resolve it to a display name for the UI.
-        batch: MOCK_BATCHES.find((b) => b.id === data.batch)?.name
-          ?? data.batch
-          ?? MOCK_BATCHES[0].name,
+        role: data.role,
+        batch: `${data.batchYear} ${data.department}`,
+        batchYear: data.batchYear,
+        department: data.department,
       };
 
       const mockResponse: AuthResponse = {
         user: newUser,
-        token: `mock_jwt_token_student_${Date.now()}`,
+        token: `mock_jwt_token_${newUser.role}_${Date.now()}`,
       };
 
       localStorage.setItem(TOKEN_KEY, mockResponse.token);
@@ -90,7 +97,9 @@ export const authService = {
       email: data.email,
       password: data.password,
       password_confirmation: data.password,
-      batch_id: data.batch,
+      batch_year: data.batchYear,
+      department: data.department,
+      role: data.role,
     });
     const mapped: AuthResponse = { user: mapUser(response.user), token: response.token };
     localStorage.setItem(TOKEN_KEY, mapped.token);

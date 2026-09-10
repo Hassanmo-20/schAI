@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Enums\BatchYear;
+use App\Enums\Department;
 use App\Enums\Role;
 use App\Enums\TaskType;
 use App\Models\Batch;
@@ -14,15 +16,24 @@ use Illuminate\Support\Facades\Hash;
 /**
  * Realistic development dataset mirroring the frontend mock scenarios:
  * tonight / tomorrow / 2-day / 7-day / overdue tasks with varied completion.
+ *
+ * Also creates every offered group (5 batch years x 2 departments) and seeds
+ * neighbours that differ from the demo group by department only and by batch
+ * year only, so isolation can be checked manually along both axes.
  */
 class SchAIDemoSeeder extends Seeder
 {
     public function run(): void
     {
-        $batch = Batch::firstOrCreate(
-            ['name' => 'Batch CS-2026-A'],
-            ['department' => 'Computer Science', 'academic_year' => '2026']
-        );
+        // Every group the registration form offers, so the picker is populated
+        // on a freshly seeded database.
+        foreach (BatchYear::cases() as $batchYear) {
+            foreach (Department::cases() as $department) {
+                Batch::resolveGroup($batchYear, $department);
+            }
+        }
+
+        $batch = Batch::resolveGroup(BatchYear::Y2027, Department::CCE);
 
         $rep = User::firstOrCreate(
             ['email' => 'representative@schai.test'],
@@ -139,29 +150,49 @@ class SchAIDemoSeeder extends Seeder
             }
         }
 
-        // A second batch so cross-batch isolation can be exercised manually.
-        $other = Batch::firstOrCreate(
-            ['name' => 'Batch CS-2026-B'],
-            ['department' => 'Computer Science', 'academic_year' => '2026']
+        // Neighbouring groups so cross-group isolation can be exercised by hand
+        // along BOTH axes: same year / different department, and same
+        // department / different year. Neither should ever see the tasks above.
+        $this->seedNeighbourGroup(
+            Batch::resolveGroup(BatchYear::Y2027, Department::CSE),
+            'rep.2027cse@schai.test',
+            '2027 CSE Rep',
+            '2027 CSE only: Signals & Systems Worksheet',
         );
 
-        $otherRep = User::firstOrCreate(
-            ['email' => 'rep.b@schai.test'],
+        $this->seedNeighbourGroup(
+            Batch::resolveGroup(BatchYear::Y2028, Department::CCE),
+            'rep.2028cce@schai.test',
+            '2028 CCE Rep',
+            '2028 CCE only: Networks Worksheet',
+        );
+    }
+
+    /** A group with one representative and one task nobody outside it may see. */
+    private function seedNeighbourGroup(Batch $group, string $email, string $repName, string $taskTitle): void
+    {
+        $rep = User::firstOrCreate(
+            ['email' => $email],
             [
-                'name' => 'Batch B Rep',
+                'name' => $repName,
                 'password' => Hash::make('password'),
                 'role' => Role::Representative,
-                'batch_id' => $other->id,
+                'batch_id' => $group->id,
             ]
         );
 
+        User::factory()->count(5)->create([
+            'batch_id' => $group->id,
+            'role' => Role::Student,
+        ]);
+
         Task::firstOrCreate(
-            ['title' => 'Batch B only: Networks Worksheet', 'batch_id' => $other->id],
+            ['title' => $taskTitle, 'batch_id' => $group->id],
             [
-                'description' => 'Should never be visible to batch A users.',
+                'description' => "Should never be visible outside {$group->groupLabel()}.",
                 'type' => TaskType::Assignment,
                 'deadline' => now()->addDays(3),
-                'created_by' => $otherRep->id,
+                'created_by' => $rep->id,
                 'is_active' => true,
             ]
         );

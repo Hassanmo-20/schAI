@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\TaskType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tasks\StoreTaskRequest;
 use App\Http\Requests\Tasks\UpdateTaskRequest;
@@ -9,6 +10,9 @@ use App\Http\Resources\TaskResource;
 use App\Models\Task;
 use App\Models\TaskAttachment;
 use App\Models\User;
+use App\Services\TaskCreationService;
+use App\Services\TaskNotifier;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -19,6 +23,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TaskController extends Controller
 {
+    public function __construct(
+        private readonly TaskCreationService $taskCreator,
+        private readonly TaskNotifier $notifier,
+    ) {}
+
     /**
      * Batch-scoped listing. Students see active tasks only; representatives
      * see their whole batch (including deactivated) with completion aggregates.
@@ -68,16 +77,13 @@ class TaskController extends Controller
         Gate::authorize('create', Task::class);
 
         $task = DB::transaction(function () use ($request) {
-            $task = Task::create([
-                'title' => $request->validated('title'),
-                'description' => $request->validated('description'),
-                'type' => $request->validated('type'),
-                'deadline' => $request->validated('deadline'),
-                // Ownership is derived server-side — never accepted from the client.
-                'batch_id' => $request->user()->batch_id,
-                'created_by' => $request->user()->id,
-                'is_active' => true,
-            ]);
+            $task = $this->taskCreator->create(
+                $request->user(),
+                $request->validated('title'),
+                TaskType::from($request->validated('type')),
+                Carbon::parse($request->validated('deadline')),
+                $request->validated('description'),
+            );
 
             $this->storeAttachments($task, $request);
 
@@ -85,6 +91,9 @@ class TaskController extends Controller
         });
 
         $task->load(['attachments', 'creator']);
+
+        // After commit: a rolled-back task must never produce notifications.
+        $this->notifier->taskPublished($task);
 
         return (new TaskResource($task))->response()->setStatusCode(201);
     }
@@ -103,6 +112,8 @@ class TaskController extends Controller
     {
         Gate::authorize('update', $task);
 
+        $originalDeadline = $task->deadline?->copy();
+
         DB::transaction(function () use ($request, $task) {
             // Only validated scalar fields are updatable: created_by, batch_id
             // and completion data can never change through this endpoint.
@@ -112,6 +123,15 @@ class TaskController extends Controller
 
         $task->refresh()->load(['attachments', 'creator']);
         $task->setAttribute('viewer_completed_at', $this->viewerCompletedAt($task->id, $request->user()->id));
+
+        // A deactivated task is no longer the group's concern — don't notify.
+        if ($task->is_active) {
+            $deadlineChanged = $originalDeadline === null
+                ? $task->deadline !== null
+                : ! $originalDeadline->equalTo($task->deadline);
+
+            $this->notifier->taskUpdated($task, $deadlineChanged);
+        }
 
         return new TaskResource($task);
     }

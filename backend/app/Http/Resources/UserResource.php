@@ -8,8 +8,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Public user shape. The password hash is hidden by the model and is never
- * included here. `batch` is the display name so the existing frontend can
- * bind it directly; `batch_id` is the relational key.
+ * included here.
+ *
+ * The group the user belongs to is exposed as its parts (`batch_year`,
+ * `department`) plus a ready-made display label, so the UI can show
+ * "2027 CCE" without re-deriving it.
  *
  * @mixin User
  */
@@ -23,8 +26,10 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'role' => $this->role->value,
             'batch_id' => $this->batch_id,
-            // Display name for direct frontend binding (controllers eager-load `batch`).
-            'batch' => $this->batch?->name,
+            'batch_year' => $this->batch?->batch_year?->value,
+            'department' => $this->batch?->department?->value,
+            // Display label for direct frontend binding (controllers eager-load `batch`).
+            'batch' => $this->batch?->groupLabel(),
         ];
     }
 }

@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\TaskAlreadyCompletedException;
 use App\Http\Controllers\Controller;
 use App\Models\Task;
-use App\Models\TaskCompletion;
-use Illuminate\Database\UniqueConstraintViolationException;
+use App\Services\TaskCompletionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class TaskCompletionController extends Controller
 {
+    public function __construct(private readonly TaskCompletionService $completions) {}
+
     /**
      * Mark the task complete for the authenticated student.
      * The student id always comes from the token — never from the client.
@@ -21,14 +23,8 @@ class TaskCompletionController extends Controller
         Gate::authorize('complete', $task);
 
         try {
-            $completion = TaskCompletion::create([
-                'task_id' => $task->id,
-                'student_id' => $request->user()->id,
-                'completed_at' => now(),
-            ]);
-        } catch (UniqueConstraintViolationException) {
-            // UNIQUE(task_id, student_id) is the authority here: relying on a
-            // prior SELECT would leave a race window between check and insert.
+            $completion = $this->completions->complete($request->user(), $task);
+        } catch (TaskAlreadyCompletedException) {
             return response()->json(['message' => 'Task already marked as complete'], 409);
         }
 
@@ -43,11 +39,7 @@ class TaskCompletionController extends Controller
     {
         Gate::authorize('complete', $task);
 
-        $deleted = TaskCompletion::where('task_id', $task->id)
-            ->where('student_id', $request->user()->id)
-            ->delete();
-
-        if ($deleted === 0) {
+        if (! $this->completions->uncomplete($request->user(), $task)) {
             return response()->json(['message' => 'Task is not marked as complete'], 404);
         }
 

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AssistantController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BatchController;
 use App\Http\Controllers\Api\HealthController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TaskCompletionController;
 use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\TaskStatisticsController;
@@ -21,10 +22,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class)->name('api.health');
 
-// Public: the registration form needs valid batch ids to submit.
+// Public: the registration form needs the valid batch/department/role choices.
 Route::get('/batches', [BatchController::class, 'index'])
     ->middleware('throttle:30,1')
     ->name('api.batches.index');
+
+Route::get('/registration-options', [BatchController::class, 'options'])
+    ->middleware('throttle:30,1')
+    ->name('api.registration.options');
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])
@@ -49,6 +54,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::delete('/tasks/{task}/complete', [TaskCompletionController::class, 'destroy']);
 
     Route::get('/tasks/{task}/statistics', [TaskStatisticsController::class, 'show']);
+
+    // Notifications: always the authenticated user's own rows.
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 
     // AI assistant: separate, tighter limiter because each call costs money.
     Route::post('/assistant/chat', [AssistantController::class, 'chat'])

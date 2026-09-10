@@ -11,6 +11,13 @@ export const ASSISTANT_LIMITS = {
   maxHistoryMessages: 6,
 } as const;
 
+export interface AssistantReply {
+  message: string;
+  /** True when the message caused a real task to be created/completed —
+   *  the caller should refetch the task list so the UI reflects it. */
+  taskChanged: boolean;
+}
+
 export interface AssistantError extends Error {
   status?: number;
   rateLimited?: boolean;
@@ -23,23 +30,26 @@ export interface AssistantError extends Error {
  * to our own authenticated endpoint, which builds the academic context itself.
  */
 export const assistantService = {
-  async sendMessage(message: string, history: AssistantTurn[] = []): Promise<string> {
+  async sendMessage(message: string, history: AssistantTurn[] = []): Promise<AssistantReply> {
     const trimmed = message.trim();
     if (!trimmed) {
       throw new Error('Please enter a question for the assistant.');
     }
 
     try {
-      const response = await apiClient.post<{ data: { message: string } }>('/assistant/chat', {
-        message: trimmed.slice(0, ASSISTANT_LIMITS.maxMessageChars),
-        history: history.slice(-ASSISTANT_LIMITS.maxHistoryMessages),
-      });
+      const response = await apiClient.post<{ data: { message: string; taskChanged?: boolean } }>(
+        '/assistant/chat',
+        {
+          message: trimmed.slice(0, ASSISTANT_LIMITS.maxMessageChars),
+          history: history.slice(-ASSISTANT_LIMITS.maxHistoryMessages),
+        }
+      );
 
       const reply = response?.data?.message;
       if (!reply) {
         throw new Error('The assistant returned an empty response. Please try again.');
       }
-      return reply;
+      return { message: reply, taskChanged: Boolean(response?.data?.taskChanged) };
     } catch (err: any) {
       const status: number | undefined = err?.status;
 

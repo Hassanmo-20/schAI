@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { assistantService, AssistantTurn, ASSISTANT_LIMITS } from '../../services/assistantService';
+import { useTasks } from '../../context/TaskContext';
 import Markdown from '../common/Markdown';
 import './tasks.css';
 
@@ -11,8 +12,8 @@ interface ChatMsg {
 const SUGGESTIONS = [
   'What should I work on today?',
   'Which task is most urgent?',
-  'Make me a study plan for this week.',
-  'Show me my upcoming deadlines.',
+  'What do I have this week?',
+  'Add a quiz for Friday',
 ];
 
 /**
@@ -23,6 +24,7 @@ const SUGGESTIONS = [
  * present in the browser.
  */
 const AcademicAssistant: React.FC = () => {
+  const { fetchTasks } = useTasks();
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
@@ -55,7 +57,12 @@ const AcademicAssistant: React.FC = () => {
 
     try {
       const reply = await assistantService.sendMessage(text, history);
-      setMessages((prev) => [...prev, { role: 'assistant', text: reply }]);
+      setMessages((prev) => [...prev, { role: 'assistant', text: reply.message }]);
+      if (reply.taskChanged) {
+        // A task was really created/completed by this command — refresh from
+        // the backend so the dashboard/task list reflect it immediately.
+        void fetchTasks();
+      }
     } catch (err: any) {
       setError(err?.message ?? 'Something went wrong. Please try again.');
       setRateLimited(Boolean(err?.rateLimited));
@@ -85,7 +92,8 @@ const AcademicAssistant: React.FC = () => {
       <div className="assistant-head">
         <h2 id="assistant-heading">Academic Assistant</h2>
         <p className="assistant-sub">
-          Ask about your tasks, deadlines and study planning.
+          Ask about your tasks, or say things like &quot;I have a quiz tomorrow&quot; or
+          &quot;I finished the database assignment&quot;.
         </p>
       </div>
 
