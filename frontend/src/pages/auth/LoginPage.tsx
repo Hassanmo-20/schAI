@@ -60,12 +60,6 @@ const LoginPage: React.FC = () => {
         </div>
         <h1>SchAI: Your Intelligent Task Assistant</h1>
         <p>Streamline your schedule, track your progress, and get things done.</p>
-        <div className="auth-demo" aria-label="Development accounts">
-          <strong>Dev accounts</strong>
-          <span>Student: student@schai.test</span>
-          <span>Representative: representative@schai.test</span>
-          <span>Any password works in mock mode.</span>
-        </div>
       </section>
 
       <section className="auth-panel">
