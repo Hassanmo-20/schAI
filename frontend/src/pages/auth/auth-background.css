@@ -1,0 +1,141 @@
+/* Shared "Academic AI Network" backdrop for auth pages.
+   Layers: gradient atmosphere + dot grid + SVG network + light trails + floats.
+   GPU-friendly: only transform/opacity animate. Respects reduced motion. */
+
+.auth-bg {
+  position: absolute; inset: 0; z-index: 0;
+  overflow: hidden; pointer-events: none;
+  color: rgba(148, 178, 255, 0.55);
+}
+
+/* 1 — Animated gradient atmosphere (deep blue/indigo, muted) */
+.auth-bg__atmosphere {
+  position: absolute; inset: -12%;
+  background:
+    radial-gradient(560px 420px at 18% 18%, rgba(56, 120, 200, 0.32), transparent 62%),
+    radial-gradient(620px 460px at 82% 24%, rgba(45, 150, 170, 0.26), transparent 62%),
+    radial-gradient(720px 520px at 50% 95%, rgba(99, 102, 200, 0.24), transparent 64%),
+    linear-gradient(165deg, #0b1530 0%, #101d42 48%, #123047 100%);
+}
+.auth-bg__blob { position: absolute; border-radius: 50%; filter: blur(2px); will-change: transform; }
+.auth-bg__blob--a {
+  width: 44vmax; height: 44vmax; left: -12vmax; top: -14vmax;
+  background: radial-gradient(circle, rgba(70, 130, 220, 0.20), transparent 65%);
+  animation: auth-blob-a 26s ease-in-out infinite alternate;
+}
+.auth-bg__blob--b {
+  width: 40vmax; height: 40vmax; right: -12vmax; top: 6vmax;
+  background: radial-gradient(circle, rgba(45, 180, 190, 0.18), transparent 65%);
+  animation: auth-blob-b 32s ease-in-out infinite alternate;
+}
+.auth-bg__blob--c {
+  width: 46vmax; height: 46vmax; left: 22%; bottom: -24vmax;
+  background: radial-gradient(circle, rgba(120, 130, 230, 0.16), transparent 65%);
+  animation: auth-blob-a 38s ease-in-out infinite alternate-reverse;
+}
+@keyframes auth-blob-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(4vmax, 3vmax, 0) scale(1.08); }
+}
+@keyframes auth-blob-b {
+  from { transform: translate3d(0, 0, 0) scale(1.05); }
+  to { transform: translate3d(-4vmax, 4vmax, 0) scale(0.96); }
+}
+
+/* 2 — Academic dot-matrix grid, slow pan */
+.auth-bg__grid {
+  position: absolute; inset: 0; opacity: 0.5;
+  background-image:
+    linear-gradient(rgba(160, 190, 240, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(160, 190, 240, 0.07) 1px, transparent 1px),
+    radial-gradient(rgba(180, 205, 250, 0.10) 1px, transparent 1.4px);
+  background-size: 56px 56px, 56px 56px, 26px 26px;
+  mask-image: radial-gradient(120% 100% at 50% 40%, black 35%, transparent 92%);
+  animation: auth-grid-pan 60s linear infinite;
+  will-change: background-position;
+}
+@keyframes auth-grid-pan {
+  from { background-position: 0 0, 0 0, 0 0; }
+  to { background-position: 56px 28px, 28px 56px, 26px 52px; }
+}
+.auth-bg__vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(115% 90% at 50% 42%, transparent 55%, rgba(4, 9, 22, 0.55) 100%);
+}
+
+/* 3 — AI network (SVG): slow drift + link breathing */
+.auth-bg__net { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.5; }
+.auth-bg__net-group { will-change: transform; }
+.auth-bg__net-group--a { animation: auth-net-a 24s ease-in-out infinite alternate; }
+.auth-bg__net-group--b { animation: auth-net-b 30s ease-in-out infinite alternate; }
+@keyframes auth-net-a {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(26px, -20px, 0); }
+}
+@keyframes auth-net-b {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-24px, 22px, 0); }
+}
+.auth-bg__node { fill: rgba(140, 200, 240, 0.85); stroke: none; }
+.auth-bg__link { stroke: rgba(140, 180, 240, 0.35); animation: auth-link 6s ease-in-out infinite; }
+.auth-bg__link--late { animation-delay: -3s; }
+@keyframes auth-link {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+/* 5 — Light trails / data paths, extremely subtle */
+.auth-bg__trails { position: absolute; inset: 0; }
+.auth-bg__trail {
+  position: absolute; height: 1px; width: 42%;
+  background: linear-gradient(90deg, transparent, rgba(150, 210, 250, 0.35), transparent);
+  animation: auth-trail 22s linear infinite;
+  will-change: transform; opacity: 0.6;
+}
+.auth-bg__trail--one { top: 22%; left: -42%; }
+.auth-bg__trail--two { top: 68%; left: -42%; animation-duration: 30s; animation-delay: -12s; opacity: 0.45; }
+@keyframes auth-trail {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(340%, 0, 0); }
+}
+
+/* 4 — Floating academic/productivity chips, very low opacity */
+.auth-bg__floats { position: absolute; inset: 0; }
+.auth-float {
+  position: absolute;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 44px; height: 44px; padding: 0 12px;
+  font-size: 17px; font-weight: 600; color: rgba(220, 235, 250, 0.85);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  opacity: 0.5;
+  animation: auth-float-y 11s ease-in-out infinite;
+  will-change: transform;
+}
+.auth-float--1 { left: 6%; top: 20%; animation-delay: 0s; }
+.auth-float--2 { left: 11%; bottom: 18%; animation-delay: -2.5s; font-size: 19px; }
+.auth-float--3 { right: 7%; top: 24%; animation-delay: -5s; }
+.auth-float--4 { right: 11%; bottom: 22%; animation-delay: -7s; }
+.auth-float--5 { left: 44%; top: 8%; animation-delay: -3.5s; font-size: 13px; letter-spacing: 0.4px; }
+.auth-float--6 { left: 48%; bottom: 7%; animation-delay: -8.5s; font-size: 14px; font-family: ui-monospace, monospace; }
+@keyframes auth-float-y {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-3deg); }
+  50% { transform: translate3d(0, -14px, 0) rotate(3deg); }
+}
+
+/* Responsive: reduce density on small screens */
+@media (max-width: 780px) {
+  .auth-bg__net { opacity: 0.35; }
+  .auth-float--4, .auth-float--5, .auth-float--6 { display: none; }
+  .auth-float { opacity: 0.38; }
+  .auth-bg__trail--two { display: none; }
+}
+
+/* Accessibility: keep visuals, stop motion */
+@media (prefers-reduced-motion: reduce) {
+  .auth-bg__blob, .auth-bg__grid, .auth-bg__net-group,
+  .auth-bg__link, .auth-bg__trail, .auth-float {
+    animation: none;
+  }
+}

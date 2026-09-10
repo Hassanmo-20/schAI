@@ -1,19 +1,73 @@
 /* Auth pages preserve the original navy/teal split-screen identity. */
 
+/* Page wrapper hosts the shared animated backdrop; the card stays focal. */
+.auth-page {
+  position: relative; isolation: isolate;
+  min-height: 100dvh; width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  padding: 48px 20px; overflow-x: clip;
+  background: #0b1530;
+}
 .auth-shell {
+  position: relative; z-index: 1;
   display: grid; grid-template-columns: 1fr 1fr;
   width: 100%; max-width: 960px; min-height: 520px;
-  border-radius: 10px; overflow: hidden;
+  border-radius: 16px; overflow: hidden;
   box-shadow: var(--shadow-xl);
-  margin: 48px auto;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(6px);
 }
-.auth-brand { background: var(--navy); color: #fff; padding: 56px 48px; display: flex; flex-direction: column; justify-content: center; }
+.auth-brand {
+  position: relative; overflow: hidden; isolation: isolate;
+  color: #fff; padding: 56px 48px;
+  display: flex; flex-direction: column; justify-content: center;
+  background:
+    radial-gradient(420px 320px at 85% -10%, rgba(45, 212, 191, 0.35), transparent 60%),
+    radial-gradient(480px 380px at -20% 110%, rgba(129, 140, 248, 0.28), transparent 60%),
+    linear-gradient(160deg, #101d2e 0%, #13273d 55%, #0f3a44 100%);
+}
+/* Dotted grid texture */
+.auth-brand::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; opacity: 0.5;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(180deg, black 30%, transparent 90%);
+}
+/* Soft glow orb */
+.auth-brand::after {
+  content: ""; position: absolute; z-index: 0;
+  width: 340px; height: 340px; right: -110px; top: -110px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.45), transparent 65%);
+  filter: blur(6px);
+}
+.auth-brand-inner { position: relative; z-index: 1; }
+.auth-highlights { list-style: none; display: flex; flex-wrap: wrap; gap: 10px; margin: 26px 0 0; padding: 0; }
+.auth-highlights li {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; color: #d9e6ec;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px; padding: 8px 14px;
+  backdrop-filter: blur(4px);
+}
+.hl-dot { color: var(--teal-light); font-size: 14px; }
 .auth-logo-text { font-size: 52px; font-weight: 700; letter-spacing: -1px; }
 .auth-logo-text .ai { color: var(--teal-light); }
 .auth-brand h1 { margin: 24px 0 18px; font-size: 27px; font-weight: 500; line-height: 1.3; color: #e7ebee; }
 .auth-brand p { margin: 0; max-width: 22em; font-size: 16px; line-height: 1.6; color: #9aa7b2; }
-.auth-panel { background: var(--panel); display: flex; align-items: center; justify-content: center; padding: 48px 40px; }
-.auth-card { width: 100%; max-width: 340px; background: #fff; border-radius: 6px; box-shadow: var(--shadow-md); overflow: hidden; }
+.auth-panel {
+  background: rgba(238, 241, 242, 0.88);
+  display: flex; align-items: center; justify-content: center; padding: 48px 40px;
+  backdrop-filter: blur(10px);
+}
+.auth-card {
+  width: 100%; max-width: 340px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 14px; box-shadow: var(--shadow-md); overflow: hidden;
+}
 .auth-card-header { padding: 22px 0 18px; text-align: center; font-size: 22px; font-weight: 600; border-bottom: 1px solid var(--border); position: relative; }
 .auth-card-header::after { content: ""; position: absolute; left: 0; bottom: -1px; width: 38%; height: 3px; background: var(--teal); }
 .auth-card form { padding: 24px 26px 26px; }
@@ -29,10 +83,11 @@
 .auth-group-preview { margin: 4px 0 18px; font-size: 13px; line-height: 1.5; color: var(--text-muted, #64748b); }
 .auth-group-preview strong { color: var(--navy); }
 
-body:has(.auth-shell) { display: flex; align-items: flex-start; justify-content: center; background: #cfd6d6; }
+body:has(.auth-page) { display: block; background: #0b1530; }
 
 @media (max-width: 780px) {
-  .auth-shell { grid-template-columns: 1fr; margin: 0; border-radius: 0; max-width: none; min-height: 100dvh; }
+  .auth-page { padding: 0; align-items: stretch; }
+  .auth-shell { grid-template-columns: 1fr; margin: 0; border-radius: 0; max-width: none; min-height: 100dvh; border: 0; }
   .auth-brand { padding: 40px 28px; text-align: center; align-items: center; }
   .auth-panel { padding: 28px 20px 40px; }
 }

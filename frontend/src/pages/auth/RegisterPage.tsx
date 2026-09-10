@@ -5,6 +5,7 @@ import { Field, Input, Select } from '../../components/common/FormControls';
 import { Button } from '../../components/common/Button';
 import { batchService } from '../../services/batchService';
 import { RegistrationOptions, UserRole } from '../../types';
+import AuthAnimatedBackground from './AuthAnimatedBackground';
 import './auth.css';
 
 function isValidEmail(v: string): boolean {
@@ -95,13 +96,22 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <main className="auth-shell">
+    <div className="auth-page">
+      <AuthAnimatedBackground />
+      <main className="auth-shell">
       <section className="auth-brand" aria-label="About SchAI">
-        <div className="auth-logo">
-          <span className="auth-logo-text">Sch<span className="ai">AI</span></span>
+        <div className="auth-brand-inner">
+          <div className="auth-logo">
+            <span className="auth-logo-text">Sch<span className="ai">AI</span></span>
+          </div>
+          <h1>Create your account</h1>
+          <p>Track assignments, quizzes, midterms and projects for your batch — all in one hub.</p>
+          <ul className="auth-highlights" aria-label="Highlights">
+            <li><span className="hl-dot" aria-hidden="true">◷</span> Deadline tracking</li>
+            <li><span className="hl-dot" aria-hidden="true">◈</span> Progress insights</li>
+            <li><span className="hl-dot" aria-hidden="true">✦</span> AI study help</li>
+          </ul>
         </div>
-        <h1>Create your account</h1>
-        <p>Track assignments, quizzes, midterms and projects for your batch — all in one hub.</p>
       </section>
 
       <section className="auth-panel">
@@ -198,6 +208,7 @@ const RegisterPage: React.FC = () => {
         </div>
       </section>
     </main>
+    </div>
   );
 };
 
